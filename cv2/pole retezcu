@@ -1,0 +1,76 @@
+    bits 64
+
+    section .data
+    extern g_int_mac_address
+    extern g_str_mac_address
+    ; variables
+    
+;***************************************************************************
+ 
+    section .text 
+    global convert_int_to_mac
+convert_int_to_mac:
+    mov r8, 0 ; pocet retezcu (2)
+    mov r9, 0
+.foreach:
+    mov rdx, 0 ;pozice bajtu v retezci (5)
+    
+.for:
+    mov rcx, 0
+    mov rbx,5
+    sub rbx,rdx
+    inc rdx
+
+    mov al, [ g_int_mac_address + 8 * r8 + rbx]
+
+    mov ah, al
+    shr ah,4 ; vrchni 4 bity
+    and al,0x0F ; spodni 4 bity
+
+    mov ch, 0
+    mov cl, ah
+
+    cmp cl, 10
+    jl .isdigit
+    jmp .ischar
+
+.check:
+    mov ch, 1
+    mov cl, al
+
+    cmp cl, 10
+    jl .isdigit
+    jmp .ischar
+
+.conditions:
+    cmp rdx, 6 ;if
+    jl .continue
+               ;else
+    inc r8
+    inc r9 ; posun za \0 predchoziho retezce
+    cmp r8, 5 ;
+    jl .foreach
+    ret
+
+.continue:
+    mov [ g_str_mac_address + r9], byte ':'
+    inc r9
+    jmp .for
+
+.isdigit:
+    mov bh, 48
+    add cl,bh
+    mov [ g_str_mac_address + r9], cl
+    inc r9
+    cmp ch, 0
+    je .check
+    jmp .conditions
+
+.ischar:
+    mov bh, 55
+    add cl,bh
+    mov [ g_str_mac_address + r9], cl
+    inc r9
+    cmp ch, 0
+    je .check
+    jmp .conditions
